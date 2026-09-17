@@ -47,6 +47,28 @@ export interface RequiredFieldSpec {
   path: string;
   /** "string" | "number" | "boolean" | "any" — "any" means "must be defined", no type check. */
   type: 'string' | 'number' | 'boolean' | 'any';
+  /**
+   * If present, a string value must be one of these — checked in addition to
+   * `type`, never instead of it. Without this, a field whose `notes` merely
+   * SAYS "one of ALLOW / ALLOW_WITH_WARNING / ..." was never actually
+   * enforced — `verdict.action: "banana"` passed `checkAuditEventShape`
+   * just as cleanly as a real verdict.
+   */
+  enum?: string[];
+  /**
+   * If present, this field is only required when the field at `unless.path`
+   * equals `unless.equals` — e.g. `verdict.reason` is required unless
+   * `verdict.action` is a bare `"ALLOW"` (PROTOCOL.md §4.1's own rule, and
+   * TTTB's real `AuditEvent`'s actual behavior). Without this, the format
+   * could only express "always required" or "always optional" — TTTB's own
+   * conformance vectors needed `verdict.reason` conditionally required, so
+   * that entry was simply left out of this package's copy entirely,
+   * silently weaker than the grammar it claims to port. A value present
+   * despite the condition holding is still type/enum-checked either way —
+   * this only ever widens what's ALLOWED to be absent, never what's
+   * accepted when present.
+   */
+  unless?: { path: string; equals: string };
   notes?: string;
 }
 
@@ -72,11 +94,20 @@ export function checkAuditEventShape(
   for (const field of requiredFields) {
     const value = readPath(event, field.path);
     if (value === undefined) {
+      if (field.unless && readPath(event, field.unless.path) === field.unless.equals) {
+        continue; // conditionally optional, and the condition holds — not a violation
+      }
       violations.push(`${field.path}: missing`);
       continue;
     }
     if (field.type !== 'any' && typeof value !== field.type) {
       violations.push(`${field.path}: expected ${field.type}, got ${typeof value}`);
+      continue;
+    }
+    if (field.enum && typeof value === 'string' && !field.enum.includes(value)) {
+      violations.push(
+        `${field.path}: expected one of ${field.enum.join(' / ')}, got ${JSON.stringify(value)}`,
+      );
     }
   }
   return violations;

@@ -7,6 +7,33 @@ what counts as a breaking change for this package specifically.
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-09-17
+
+### Added
+
+- `RequiredFieldSpec` gained two optional fields: `enum` (a string value
+  must be one of a fixed set) and `unless` (a field is only required when
+  another field doesn't equal a given value). Previously the format could
+  only express "always required" or "always optional" — a field whose
+  `notes` merely SAID "one of ALLOW / ALLOW_WITH_WARNING / ..." was never
+  actually enforced (`verdict.action: "banana"` passed
+  `checkAuditEventShape` cleanly), and TTTB's own conformance vectors
+  needed `verdict.reason` conditionally required (only when `verdict.action`
+  isn't a bare `ALLOW`), which this package's copy simply left out
+  entirely rather than express. `auditEventShape.requiredFields` now
+  carries real `enum`s on `verdict.action`/`taint.scopeLevel`/
+  `taint.sinkClass` and the previously-missing `verdict.reason` entry.
+- `./conformance/vectors.json` is now a valid subpath import — the file
+  shipped in the package but nothing outside it could actually `import`
+  it.
+
+### Changed
+
+- `engines.node` relaxed from `>=24` to `>=22` — this package has no
+  Node-24-specific code, and the stricter floor would have forced a
+  breaking change on taint-tracked-tool-broker's own users (which still
+  supports Node 22) the moment it adopted this package.
+
 ## [0.2.0] - 2026-09-17
 
 ### Fixed
