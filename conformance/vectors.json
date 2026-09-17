@@ -10,7 +10,29 @@
         "externalId": "scenario-1::agent-a",
         "encoded": "control-coverage-range:scenario-1::agent-a"
       },
-      { "source": "mcp-config", "externalId": "my-agent-id", "encoded": "mcp-config:my-agent-id" }
+      { "source": "mcp-config", "externalId": "my-agent-id", "encoded": "mcp-config:my-agent-id" },
+      {
+        "source": "workspace",
+        "externalId": "alice@acme.example",
+        "encoded": "workspace:alice%40acme.example",
+        "notes": "the confirmed bug: an unescaped '@' here was rejected outright by RBA's real tuple-write validation, dead-lettering every Workspace grant"
+      },
+      {
+        "source": "github",
+        "externalId": "issue#42",
+        "encoded": "github:issue%2342"
+      },
+      {
+        "source": "manual",
+        "externalId": "50%-off",
+        "encoded": "manual:50%25-off",
+        "notes": "a literal '%' in externalId must itself be escaped, since '%' is this codec's own escape character"
+      },
+      {
+        "source": "manual",
+        "externalId": "line1\nline2",
+        "encoded": "manual:line1%0Aline2"
+      }
     ],
     "invalid": [
       { "value": "", "reason": "must not be empty" },

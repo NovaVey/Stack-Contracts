@@ -40,12 +40,22 @@ Two related grammars, both previously duplicated across repos:
    a single opaque string. `encodeIdentityRef`/`decodeIdentityRef` split on
    the FIRST colon, never any other — an `externalId` (e.g. a GitHub
    `"owner/repo"`) is never guaranteed colon-free, but a `source` name (a
-   short, fixed string an adapter defines) always is.
+   short, fixed string an adapter defines) always is; `encodeIdentityRef`
+   throws if `source` itself contains a colon, rather than risk a silently
+   corrupted round trip. Any `%`/`#`/`@`/control character in either field
+   is percent-encoded before the two are joined, so the composite id always
+   satisfies grammar (2) below regardless of what the foreign `externalId`
+   itself contains — an email address's `@`, say (see the now-closed
+   `workspace-grant-unescaped-identity` gap this closed: Principal-Graph's
+   Workspace adapter feeding an unescaped `@`-bearing id into RBA's real
+   write validation, which correctly rejected it, silently dead-lettering
+   every Workspace grant).
 
    Previously independently implemented in Principal-Graph's
    `src/exporters/rba.ts` (`identityRef`/`splitIdentityRef`) and
    Control-Coverage-Range's `src/scenario/identifiers.ts` (`scoped`/
-   `rbaSubject`/`rbaObject`).
+   `rbaSubject`/`rbaObject`); both now import `encodeIdentityRef`/
+   `decodeIdentityRef` from here instead.
 
 2. **The data-plane id validation grammar** — what makes a value valid as
    an `objectId`/`subjectId` on an RBA tuple. Deliberately loose: it's an
@@ -66,8 +76,8 @@ Two related grammars, both previously duplicated across repos:
    `rba-exporter-identifier-grammar-mismatch` gap
    (Control-Coverage-Range's `taxonomy/gaps/principal-graph.yaml`) for that
    history. Principal-Graph and Control-Coverage-Range each independently
-   hardcode their own copy of this same grammar today; that duplication is
-   exactly what this package exists to close.
+   hardcoded their own copy of this same grammar before adopting this
+   package; both now import it from here instead.
 
 3. **The RBA tuple wire format** — `namespace:id` (object) and
    `namespace:id` / `namespace:id#relation` (subject), ported from
