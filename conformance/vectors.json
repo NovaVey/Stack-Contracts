@@ -80,7 +80,20 @@
       {
         "path": "verdict.action",
         "type": "string",
-        "notes": "one of ALLOW / ALLOW_WITH_WARNING / REQUIRE_APPROVAL / BLOCK"
+        "enum": [
+          "ALLOW",
+          "ALLOW_WITH_WARNING",
+          "REQUIRE_APPROVAL",
+          "BLOCK",
+          "QUARANTINE_AND_RETRY"
+        ],
+        "notes": "PROTOCOL.md section 4.1's own floor table names only the first four as required -- QUARANTINE_AND_RETRY is TTTB's real, reachable defaultPolicy extension (src/policy/default-policy.ts), included here because a real AuditEvent can legitimately carry it and this enum must not reject valid data"
+      },
+      {
+        "path": "verdict.reason",
+        "type": "string",
+        "unless": { "path": "verdict.action", "equals": "ALLOW" },
+        "notes": "required whenever verdict.action is not a bare ALLOW; see PROTOCOL.md section 4.1 and TTTB's own conformance/vectors.json, which this entry now matches"
       },
       {
         "path": "call.id",
@@ -105,6 +118,7 @@
       {
         "path": "taint.scopeLevel",
         "type": "string",
+        "enum": ["CLEAN", "DERIVED_UNTRUSTED", "RAW_UNTRUSTED"],
         "notes": "one of CLEAN / DERIVED_UNTRUSTED / RAW_UNTRUSTED"
       },
       {
@@ -114,6 +128,7 @@
       {
         "path": "taint.sinkClass",
         "type": "string",
+        "enum": ["EXEC", "MUTATE", "EXFIL", "NONE"],
         "notes": "one of EXEC / MUTATE / EXFIL / NONE"
       },
       {
@@ -164,6 +179,30 @@
           "executed": true
         },
         "expectedViolations": ["taint.privateDataSeen: expected boolean, got string"]
+      },
+      {
+        "description": "verdict.action is not one of the enumerated values",
+        "event": {
+          "verdict": { "action": "banana", "reason": "irrelevant to this case" },
+          "call": { "id": "call-4", "toolName": "read_file", "args": {}, "sessionId": "s1" },
+          "taint": { "scopeLevel": "CLEAN", "privateDataSeen": false, "sinkClass": "NONE" },
+          "at": 1893456000000,
+          "executed": true
+        },
+        "expectedViolations": [
+          "verdict.action: expected one of ALLOW / ALLOW_WITH_WARNING / REQUIRE_APPROVAL / BLOCK / QUARANTINE_AND_RETRY, got \"banana\""
+        ]
+      },
+      {
+        "description": "verdict.reason missing on a non-ALLOW verdict (required unless action is a bare ALLOW)",
+        "event": {
+          "verdict": { "action": "BLOCK" },
+          "call": { "id": "call-5", "toolName": "shell_exec", "args": {}, "sessionId": "s1" },
+          "taint": { "scopeLevel": "RAW_UNTRUSTED", "privateDataSeen": false, "sinkClass": "EXEC" },
+          "at": 1893456000000,
+          "executed": false
+        },
+        "expectedViolations": ["verdict.reason: missing"]
       }
     ]
   },

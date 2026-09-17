@@ -114,7 +114,15 @@ consumer on the other side of the seam.
 `checkAuditEventShape(event, requiredFields)` walks any candidate event
 against the field list and returns every violation found — the same
 mechanism TTTB's own `test/audit-event-shape-conformance.spec.ts` uses
-against its real, live `AuditEvent` output.
+against its real, live `AuditEvent` output. Each `RequiredFieldSpec` entry
+can also carry `enum` (the value must be one of a fixed set — not just
+type-checked) and `unless` (the field is only required when another named
+field doesn't equal a given value, e.g. `verdict.reason` is required
+unless `verdict.action` is a bare `"ALLOW"`) — both close a real gap: a
+field whose `notes` merely described its allowed values in prose was never
+actually enforced, and a conditionally-required field (TTTB's own
+`verdict.reason`) had no way to be expressed at all before this, so this
+package's copy of that entry was simply missing it.
 
 If TTTB's `PROTOCOL.md` §4.1 changes its normative field list, this
 document's §2 and `conformance/vectors.json`'s `auditEventShape` section

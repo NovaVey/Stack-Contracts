@@ -1,6 +1,6 @@
 {
   "name": "@novavey/contracts",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Shared protocol between the NovaVey agent-security repos: identity codec, event types, ADC facts shape, and round-trip conformance vectors.",
   "type": "module",
   "license": "MIT",
@@ -12,13 +12,14 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
+    "./conformance/vectors.json": "./conformance/vectors.json",
     "./package.json": "./package.json"
   },
   "publishConfig": {
     "access": "public"
   },
   "engines": {
-    "node": ">=24"
+    "node": ">=22"
   },
   "repository": {
     "type": "git",
