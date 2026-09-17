@@ -7,6 +7,21 @@ what counts as a breaking change for this package specifically.
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-09-17
+
+### Fixed
+
+- `encodeIdentityRef`/`decodeIdentityRef` now percent-encode/decode `%`,
+  `#`, `@`, and control characters in `source`/`externalId`. Previously
+  neither escaped anything, so a foreign `externalId` containing a
+  reserved character (an email address's `@`, say) produced a composite
+  id that `invalidDataPlaneIdReason` — and RBA's real tuple-write
+  validation — correctly rejected outright. Confirmed in Principal-Graph:
+  every Workspace grant (ids shaped like `workspace:alice@acme.example`)
+  was silently dead-lettered by this. `encodeIdentityRef` also now throws
+  if `source` itself contains a colon, instead of silently corrupting the
+  round trip for that ref's `externalId`.
+
 ## [0.1.0] - 2026-09-17
 
 Initial release.
