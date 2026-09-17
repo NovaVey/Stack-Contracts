@@ -80,8 +80,14 @@
       {
         "path": "verdict.action",
         "type": "string",
-        "enum": ["ALLOW", "ALLOW_WITH_WARNING", "REQUIRE_APPROVAL", "BLOCK"],
-        "notes": "one of ALLOW / ALLOW_WITH_WARNING / REQUIRE_APPROVAL / BLOCK"
+        "enum": [
+          "ALLOW",
+          "ALLOW_WITH_WARNING",
+          "REQUIRE_APPROVAL",
+          "BLOCK",
+          "QUARANTINE_AND_RETRY"
+        ],
+        "notes": "PROTOCOL.md section 4.1's own floor table names only the first four as required -- QUARANTINE_AND_RETRY is TTTB's real, reachable defaultPolicy extension (src/policy/default-policy.ts), included here because a real AuditEvent can legitimately carry it and this enum must not reject valid data"
       },
       {
         "path": "verdict.reason",
@@ -184,7 +190,7 @@
           "executed": true
         },
         "expectedViolations": [
-          "verdict.action: expected one of ALLOW / ALLOW_WITH_WARNING / REQUIRE_APPROVAL / BLOCK, got \"banana\""
+          "verdict.action: expected one of ALLOW / ALLOW_WITH_WARNING / REQUIRE_APPROVAL / BLOCK / QUARANTINE_AND_RETRY, got \"banana\""
         ]
       },
       {

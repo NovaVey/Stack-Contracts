@@ -12,7 +12,19 @@
  * shared between repos.
  */
 
-export type Verdict = 'ALLOW' | 'ALLOW_WITH_WARNING' | 'REQUIRE_APPROVAL' | 'BLOCK';
+/**
+ * PROTOCOL.md §4.1's own "minimum viable shape" table names only the first
+ * four as the required floor — but TTTB's real `PolicyDecision` (the actual
+ * type `AuditEvent.verdict` holds, `src/types.ts`) is a 5-member union, and
+ * `QUARANTINE_AND_RETRY` is a real, reachable `defaultPolicy` verdict in
+ * production, not a hypothetical extension (`src/policy/default-policy.ts`'s
+ * own `bestQuarantineCandidate()` path). Excluding it here would make
+ * `checkAuditEventShape` reject a real, valid, unremarkable event — worse
+ * than the original no-enum-enforcement gap this type closes, which at
+ * least never produced a false positive on real data.
+ */
+export type Verdict =
+  'ALLOW' | 'ALLOW_WITH_WARNING' | 'REQUIRE_APPROVAL' | 'BLOCK' | 'QUARANTINE_AND_RETRY';
 export type SinkClass = 'EXEC' | 'MUTATE' | 'EXFIL' | 'NONE';
 export type BrokerTaintLevel = 'CLEAN' | 'DERIVED_UNTRUSTED' | 'RAW_UNTRUSTED';
 
