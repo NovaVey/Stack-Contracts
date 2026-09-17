@@ -1,0 +1,167 @@
+{
+  "schemaVersion": 1,
+  "identityCodec": {
+    "description": "Round-trip vectors for encodeIdentityRef/decodeIdentityRef and the data-plane id validation grammar. Authoritative source: relationship-based-authorization's src/store/tuples.ts (invalidDataPlaneIdReason/isValidDataPlaneId/MAX_DATA_PLANE_ID_LENGTH); the encode/decode shape mirrors Principal-Graph's src/exporters/rba.ts (identityRef/splitIdentityRef).",
+    "roundTrip": [
+      { "source": "github", "externalId": "owner/repo", "encoded": "github:owner/repo" },
+      { "source": "manual", "externalId": "alice", "encoded": "manual:alice" },
+      {
+        "source": "control-coverage-range",
+        "externalId": "scenario-1::agent-a",
+        "encoded": "control-coverage-range:scenario-1::agent-a"
+      },
+      { "source": "mcp-config", "externalId": "my-agent-id", "encoded": "mcp-config:my-agent-id" }
+    ],
+    "invalid": [
+      { "value": "", "reason": "must not be empty" },
+      {
+        "value": "a#b",
+        "reason": "must not contain '#' or '@' (reserved tuple wire delimiters)"
+      },
+      {
+        "value": "a@b",
+        "reason": "must not contain '#' or '@' (reserved tuple wire delimiters)"
+      },
+      { "value": "a\u0000b", "reason": "must not contain control characters" },
+      { "value": "a\u007fb", "reason": "must not contain control characters" },
+      {
+        "generateLength": 513,
+        "reason": "exceeds the maximum data-plane id length (512)"
+      }
+    ],
+    "valid": [{ "value": "github:owner/repo" }, { "value": "a:b:c" }, { "generateLength": 512 }]
+  },
+  "tupleRef": {
+    "description": "Round-trip vectors for the RBA wire-format grammar (namespace:id, namespace:id#relation). Ported from relationship-based-authorization's src/cli/commands/tuple.ts (parseObjectRef/parseSubjectRef).",
+    "object": {
+      "valid": [
+        { "raw": "document:readme", "parsed": { "ns": "document", "id": "readme" } },
+        { "raw": "repo:owner/name", "parsed": { "ns": "repo", "id": "owner/name" } },
+        { "raw": "principal:github:alice", "parsed": { "ns": "principal", "id": "github:alice" } }
+      ],
+      "invalid": ["", "noNamespace", "ns:", ":noNamespace"]
+    },
+    "subject": {
+      "valid": [
+        { "raw": "user:alice", "parsed": { "ns": "user", "id": "alice" } },
+        {
+          "raw": "group:eng#member",
+          "parsed": { "ns": "group", "id": "eng", "relation": "member" }
+        }
+      ],
+      "invalid": ["", "group:eng#"]
+    }
+  },
+  "auditEventShape": {
+    "description": "The minimum AuditEvent shape shared across the broker/audit-sink seam. Ported verbatim from taint-tracked-tool-broker's conformance/vectors.json (auditEventShape), which documents PROTOCOL.md section 4.1 as of protocolVersion 1.1. See PROTOCOL.md section 2 here for why this is a structural floor, not TTTB's full internal AuditEvent type.",
+    "requiredFields": [
+      {
+        "path": "verdict.action",
+        "type": "string",
+        "notes": "one of ALLOW / ALLOW_WITH_WARNING / REQUIRE_APPROVAL / BLOCK"
+      },
+      {
+        "path": "call.id",
+        "type": "string",
+        "notes": "unique per CALL, not per tool -- distinct from call.toolName, which repeats across every call to the same tool"
+      },
+      {
+        "path": "call.toolName",
+        "type": "string",
+        "notes": "the tool/action name; NOT unique per call -- see call.id"
+      },
+      {
+        "path": "call.args",
+        "type": "any",
+        "notes": "the exact argument snapshot the gating decision was computed from, never a separately-derived copy"
+      },
+      {
+        "path": "call.sessionId",
+        "type": "string",
+        "notes": "an opaque label scoping this event to one broker/session instance -- never a lookup key the implementation itself resolves anything by"
+      },
+      {
+        "path": "taint.scopeLevel",
+        "type": "string",
+        "notes": "one of CLEAN / DERIVED_UNTRUSTED / RAW_UNTRUSTED"
+      },
+      {
+        "path": "taint.privateDataSeen",
+        "type": "boolean"
+      },
+      {
+        "path": "taint.sinkClass",
+        "type": "string",
+        "notes": "one of EXEC / MUTATE / EXFIL / NONE"
+      },
+      {
+        "path": "at",
+        "type": "number",
+        "notes": "epoch milliseconds when the event was recorded"
+      },
+      {
+        "path": "executed",
+        "type": "boolean",
+        "notes": "whether the underlying action actually ran"
+      }
+    ],
+    "validExample": {
+      "verdict": {
+        "action": "BLOCK",
+        "reason": "scope is RAW_UNTRUSTED; EXEC sinks are never allowed"
+      },
+      "call": {
+        "id": "call-1",
+        "toolName": "exec_shell",
+        "args": { "cmd": "echo hi" },
+        "sessionId": "session-abc"
+      },
+      "taint": { "scopeLevel": "RAW_UNTRUSTED", "privateDataSeen": false, "sinkClass": "EXEC" },
+      "at": 1893456000000,
+      "executed": false
+    },
+    "invalidExamples": [
+      {
+        "description": "missing call.sessionId",
+        "event": {
+          "verdict": { "action": "ALLOW" },
+          "call": { "id": "call-2", "toolName": "read_file", "args": {} },
+          "taint": { "scopeLevel": "CLEAN", "privateDataSeen": false, "sinkClass": "NONE" },
+          "at": 1893456000000,
+          "executed": true
+        },
+        "expectedViolations": ["call.sessionId: missing"]
+      },
+      {
+        "description": "taint.privateDataSeen wrong type",
+        "event": {
+          "verdict": { "action": "ALLOW" },
+          "call": { "id": "call-3", "toolName": "read_file", "args": {}, "sessionId": "s1" },
+          "taint": { "scopeLevel": "CLEAN", "privateDataSeen": "false", "sinkClass": "NONE" },
+          "at": 1893456000000,
+          "executed": true
+        },
+        "expectedViolations": ["taint.privateDataSeen: expected boolean, got string"]
+      }
+    ]
+  },
+  "adcFacts": {
+    "description": "resolveFacts round-trip vectors. Ported from attenuated-delegation-chain's packages/adc-core/src/caveats.ts.",
+    "cases": [
+      {
+        "input": { "sink": "net:outbound", "taintLevel": "RAW_UNTRUSTED", "now": 1893456000 },
+        "expected": { "sink": "net:outbound", "taintLevel": "RAW_UNTRUSTED", "now": 1893456000 }
+      },
+      {
+        "input": { "resourceKind": "tool", "resourceId": "t1", "relation": "can_call" },
+        "expected": { "resourceKind": "tool", "resourceId": "t1", "relation": "can_call" },
+        "nowOmitted": true
+      },
+      {
+        "input": {},
+        "expected": {},
+        "nowOmitted": true
+      }
+    ]
+  }
+}

@@ -1,0 +1,16 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # Delegates build/typecheck/test (npm run verify) to the org-shared
+  # reusable workflow — see NovaVey/.github's own README ("Reusable
+  # workflows called by ...").
+  verify:
+    uses: NovaVey/.github/.github/workflows/node-verify.yml@main
+    with:
+      node-versions: '["24", "26"]'

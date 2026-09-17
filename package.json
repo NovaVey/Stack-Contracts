@@ -1,0 +1,71 @@
+{
+  "name": "@novavey/contracts",
+  "version": "0.1.0",
+  "description": "Shared protocol between the NovaVey agent-security repos: identity codec, event types, ADC facts shape, and round-trip conformance vectors.",
+  "type": "module",
+  "license": "MIT",
+  "author": "NovaVey",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NovaVey/Stack-Contracts.git"
+  },
+  "bugs": {
+    "url": "https://github.com/NovaVey/Stack-Contracts/issues"
+  },
+  "homepage": "https://github.com/NovaVey/Stack-Contracts#readme",
+  "keywords": [
+    "novavey",
+    "contracts",
+    "protocol",
+    "conformance",
+    "identity-codec"
+  ],
+  "files": [
+    "dist",
+    "src",
+    "tsconfig*.json",
+    "conformance",
+    "README.md",
+    "PROTOCOL.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "prepare": "npm run build",
+    "prepack": "npm run build",
+    "build": "tsc -p tsconfig.build.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\" \"conformance/**/*.json\" \"*.{js,ts}\"",
+    "format:check": "prettier --check \"src/**/*.ts\" \"test/**/*.ts\" \"conformance/**/*.json\" \"*.{js,ts}\"",
+    "verify": "npm run typecheck && npm run build && npm test && npm run lint && npm run format:check"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.4",
+    "@vitest/coverage-v8": "^5.0.0",
+    "eslint": "^10.10.0",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.9.6",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.70.0",
+    "vitest": "^5.0.0"
+  }
+}
